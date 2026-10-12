@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>할로윈 GIF 메이커</title>
+<style>
+  :root { --bg: #ffffff; --card: #ffffff; --line: #e1e1e8; --ink: #20202a; --sub: #6a6a78; --orange: #ff8a1f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ffffff; color: var(--ink);
+         font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; line-height: 1.5; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 28px 18px 60px; }
+  h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -0.02em; }
+  h1 span { color: var(--orange); }
+  .lead { margin: 0 0 22px; color: var(--sub); }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .stage-box { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; }
+  canvas#stage { display: block; width: 100%; height: auto; border-radius: 12px; cursor: pointer; background: #fff; }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  button { font-family: inherit; font-size: 15px; font-weight: 700; border: 0; border-radius: 12px; padding: 12px 16px; cursor: pointer; background: #ece8f5; color: #3a2a5a; }
+  button:hover { filter: brightness(1.12); }
+  button.main { background: var(--orange); color: #2a1000; flex: 1; }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel h2 { margin: 0 0 12px; font-size: 16px; }
+  label { display: block; font-size: 13px; color: var(--sub); margin: 12px 0 5px; }
+  input[type=text], select { width: 100%; padding: 10px 12px; font-size: 15px; font-family: inherit; color: var(--ink); background: #f4f4f8; border: 1px solid var(--line); border-radius: 10px; }
+  input[type=file] { width: 100%; font-size: 14px; color: var(--sub); }
+  input[type=range] { width: 100%; accent-color: var(--orange); }
+  .val { color: var(--ink); font-weight: 700; }
+  .bar { height: 10px; background: #ececf2; border-radius: 6px; overflow: hidden; margin-top: 12px; display: none; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--orange); transition: width 0.1s; }
+  #result { display: none; margin-top: 14px; text-align: center; }
+  #result img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); }
+  #result a { display: inline-block; margin-top: 10px; background: #2fbf71; color: #052a14; text-decoration: none; font-weight: 700; padding: 11px 18px; border-radius: 12px; }
+  .small { font-size: 13px; color: var(--sub); }
+.bigcolor{width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:#f4f4f8;padding:3px}.swatches{display:flex;gap:8px;flex-wrap:wrap}.swatches input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:10px;background:#f4f4f8;padding:2px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="grid">
+    <div>
+      <div class="stage-box">
+        <canvas id="stage" width="800" height="800"></canvas>
+        <div class="row">
+          <button class="main" id="playBtn">▶ 다시 열기</button>
+          <button id="resetBtn">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>1. 꾸미기</h2>
+        <label>튀어나올 사진 — 최대 4장, 여러 장을 한꺼번에 골라도 돼요</label>
+        <input type="file" id="imgFile" accept="image/*" multiple>
+        <p class="small" id="imgMsg" style="color:#d9730d;margin:6px 0 0"></p>
+        <label>문구</label>
+        <input type="text" id="caption" value="" placeholder="" maxlength="24">
+        <label>문구 색</label>
+        <input type="color" id="capColor" value="#1b0f2a" class="bigcolor">
+        <label>테이블보 색 (접시 밑 체크무늬)</label>
+        <input type="color" id="clothColor" value="#e8576b" class="bigcolor">
+        <label>Happy Halloween! 글자 색</label>
+        <input type="color" id="hhColor" value="#ff7a12" class="bigcolor">
+        <label>접시 뒤 별 색</label>
+        <input type="color" id="starColor" value="#ffd54a" class="bigcolor">
+        <label>호박 색</label>
+        <input type="color" id="pumpColor" value="#ff9a26" class="bigcolor">
+        <label>눈 모양</label>
+        <select id="eyes"><option value="1">눈1 — 동그란 눈</option><option value="2" selected>눈2 — 반달 눈</option></select>
+        <label>입 모양</label>
+        <select id="mouth"><option value="1">입1 — 웃는 입</option><option value="2" selected>입2 — ㅅ 입</option></select>
+        <label>배경 사진 (따로 고르기 — 안 고르면 배경색만 나와요)</label>
+        <input type="file" id="bgFile" accept="image/*">
+        <p class="small" id="bgMsg" style="color:#d9730d;margin:6px 0 0"></p>
+        <button type="button" id="bgClear" style="display:none;margin:6px 0">배경 사진 지우기</button>
+        <label>배경 사진 확대 <span class="val" id="bgZoomVal"></span></label>
+        <input type="range" id="bgZoom" min="100" max="300" value="160">
+        <label>배경 사진 진하기 <span class="val" id="bgOpVal"></span></label>
+        <input type="range" id="bgOpacity" min="10" max="100" value="50">
+        <label>배경색</label>
+        <input type="color" id="bgColor" value="#ffffff" style="width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:#f4f4f8;padding:3px">
+        <label>박쥐 색</label>
+        <input type="color" id="batColor" value="#150a22" class="bigcolor">
+        <label>사탕 색깔 — 하나만 고르면 비슷한 계열로 알아서 섞여요</label>
+        <input type="color" id="candyCol" value="#ff4fa3" class="bigcolor">
+        <label>반짝이(파티클) 색깔 — 마찬가지로 비슷한 계열로 섞여요</label>
+        <input type="color" id="sparkCol" value="#ffb830" class="bigcolor">
+      </div>
+
+      <div class="panel">
+        <h2>2. GIF로 저장</h2>
+        <label>크기</label>
+        <select id="gifSize">
+          <option value="320">작게 (320px) — 가볍고 빨라요</option>
+          <option value="400">보통 (400px)</option>
+          <option value="480">크게 (480px)</option>
+          <option value="600" selected>고화질 (600px)</option>
+          <option value="800">초고화질 (800px) — 용량이 커요</option>
+        </select>
+        <label>부드러움</label>
+        <select id="gifFps">
+          <option value="8">가볍게 (초당 약 12장)</option>
+          <option value="5" selected>보통 (초당 20장)</option>
+          <option value="4">부드럽게 (초당 25장)</option>
+        </select>
+        <div class="row"><button class="main" id="gifBtn">🎞 GIF 만들기</button></div>
+        <div class="bar" id="bar"><i id="barFill"></i></div>
+        <p class="small" id="status"></p>
+        <div id="result">
+          <img id="resultImg" alt="완성된 GIF">
+          <br><a id="download" download="halloween.gif">⬇ GIF 다운로드</a>
+          <p class="small" id="sizeInfo"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// =====================================================================
+//  1) 작은 도구들
+// =====================================================================
+const W = 400, H = 400;              // 그림은 항상 400x400 기준으로 그리고, 저장할 때만 크기를 바꿔요
+const IDLE = 0.4;                    // 클릭 전 가만히 있는 시간(초) — GIF 맨 앞에 들어가요
+const POP = 1.4;                     // 뚜껑이 펑! 열리는 시각(초)
+const DURATION = 4.8;                // GIF 전체 길이(초)
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeOutCubic = k => 1 - Math.pow(1 - k, 3);
+const easeOutBack = k => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+
+// 매번 똑같은 "랜덤"을 만들어 주는 함수 (그래서 미리보기와 GIF의 움직임이 똑같아요)
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function roundRectPath(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
+}
+
+function mixColor(c1, c2, k) {       // '#rrggbb' 두 색을 k 비율로 섞기
+  const p = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+  const a = p(c1), b = p(c2);
+  return 'rgb(' + a.map((v, i) => Math.round(lerp(v, b[i], k))).join(',') + ')';
+}
+
+// =====================================================================
+//  2) 장면 만들기 (박쥐/사탕/반짝이의 "타고난 성질"을 정해 둬요)
+// =====================================================================
+let CANDY_COLORS = ['#ff4fa3', '#4be3a0', '#a77bff', '#ffd23f', '#3fc1ff'];   // 사탕 색 (메뉴에서 바꿔요)
+let SPARK_COLORS = ['#ffd35a', '#ff9a3c', '#ff5fa8', '#b57bff'];             // 반짝이 색
+
+function makeScene(opt) {
+  const r = rng(20241031);
+  const scene = { bats: [], candies: [], sparks: [] };
+  for (let i = 0; i < opt.bats; i++) {               // 박쥐: 구멍에서 터져 나와 사방으로 날아가 화면 밖으로
+    scene.bats.push({ size: 12 + r() * 9, ph: r() * 6.28, flapSp: 16 + r() * 6, ang: (i + r() * 0.7) / opt.bats * 6.283,
+      sp: 230 + r() * 160, wob: 10 + r() * 14, wobF: 4 + r() * 3, t0: POP + 0.05 + r() * 0.3 });
+  }
+  for (let i = 0; i < opt.candies; i++) {            // 사탕: 사방으로 튀어나가요
+    const ang = r() * 6.283, sp = 200 + r() * 220;
+    scene.candies.push({ type: i % 3, color: CANDY_COLORS[i % CANDY_COLORS.length], t0: POP + 0.05 + r() * 0.35,
+      vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, rot: r() * 6.28, rotV: (r() - 0.5) * 10, size: 11 + r() * 5 });
+  }
+  for (let i = 0; i < opt.sparks; i++) {             // 반짝이: 360도 사방으로 분사
+    scene.sparks.push({ t0: POP + r() * 0.25, life: 1.6 + r() * 0.8, ang: r() * 6.283,
+      sp: 200 + r() * 340, size: 2 + r() * 3.5, color: SPARK_COLORS[Math.floor(r() * SPARK_COLORS.length)], star: r() < 0.5 });
+  }
+  return scene;
+}
+
+// =====================================================================
+//  3) 그리는 부분 — render(t) : "t초일 때의 모습"을 그려요
+// =====================================================================
+// 배경: 한 가지 색 (기본은 하얀색)
+const STAR_CACHE = {};
+function starCanvas(color) {                   // 8각별({8/3})을 한 번만 완전 불투명으로 그려 두고, 나중에 투명도만 바꿔서 써요 (면과 선이 겹쳐 선처럼 보이는 것을 막아요)
+  if (STAR_CACHE[color]) return STAR_CACHE[color];
+  const cv = document.createElement('canvas'); cv.width = cv.height = 160; const g = cv.getContext('2d');
+  g.translate(80, 80); g.beginPath();
+  for (let i = 0; i < 8; i++) { const an = i * 3 * 2 * Math.PI / 8, x = 66 * Math.cos(an), y = 66 * Math.sin(an); i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath(); g.fillStyle = color; g.strokeStyle = color; g.lineWidth = 6; g.lineJoin = 'round'; g.fill('nonzero'); g.stroke();
+  return (STAR_CACHE[color] = cv);
+}
+
+function drawBackground(c, bg) {
+  c.fillStyle = bg || '#ffffff'; c.fillRect(0, 0, W, H);
+}
+
+// 접시 밑 체크 테이블보 (깅엄 체크) — 바닥 평면 위에 그려서, 카메라가 올라가면 위에서 본 정사각형이 돼요
+function hexA(hex, a) { return 'rgba(' + [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(',') + ',' + a + ')'; }
+function drawCloth(c, g, color) {
+  const H2 = 146, cell = 24.3;
+  c.save(); c.translate(200, g.yb + 11 * g.cc); c.scale(1, Math.max(g.s, 0.001)); c.rotate(0.15);          // 살짝 비스듬히 놓아요
+  c.shadowColor = 'rgba(40,20,60,0.25)'; c.shadowBlur = 14; c.shadowOffsetY = 6; c.fillStyle = '#ffffff'; c.fillRect(-H2, -H2, H2 * 2, H2 * 2);
+  c.shadowBlur = 0; c.shadowOffsetY = 0;
+  c.save(); c.beginPath(); c.rect(-H2, -H2, H2 * 2, H2 * 2); c.clip();
+  c.fillStyle = '#ffffff'; c.fillRect(-H2, -H2, H2 * 2, H2 * 2);
+  c.fillStyle = hexA(color, 0.42);
+  for (let i = 0; i < 12; i += 2) { c.fillRect(-H2 + i * cell, -H2, cell, H2 * 2); c.fillRect(-H2, -H2 + i * cell, H2 * 2, cell); }   // 가로·세로 줄이 겹치는 곳이 더 진해져요
+  c.restore();
+  // 레이스: 가장자리 안쪽의 구멍 뚫린 띠 + 바깥으로 물결치는 스캘럽(조개 모양) 장식
+  const lw = 9, n = 15, r = H2 / n;                          // 띠 너비 / 한 변의 물결 개수 / 물결 반지름
+  c.fillStyle = '#ffffff'; c.strokeStyle = 'rgba(160,150,175,0.85)'; c.lineWidth = 1.1;
+  for (let side = 0; side < 4; side++) {
+    c.save(); c.rotate(side * Math.PI / 2);
+    for (let i = 0; i < n; i++) {                              // 윗변 기준으로 그리고 90도씩 돌려서 네 변을 모두 그려요
+      const x = -H2 + r + i * 2 * r;
+      c.beginPath(); c.arc(x, -H2, r, Math.PI, 0, false); c.closePath(); c.fill(); c.stroke();
+    }
+    c.fillRect(-H2, -H2, H2 * 2, lw);                          // 안쪽 레이스 띠
+    c.strokeStyle = 'rgba(160,150,175,0.85)'; c.beginPath(); c.moveTo(-H2, -H2 + lw); c.lineTo(H2, -H2 + lw); c.stroke();
+    c.fillStyle = '#ffffff'; c.restore();
+  }
+  c.restore();
+}
+// 호박 아래 접시: 옆에서 보면 납작한 타원, 위에서 보면 동그란 원
+function drawPlate(c, g) {
+  const Rp = PLATE_R, ry = Rp * g.s, th = 11 * g.cc, cx = 200, yp = g.yb;
+  c.save(); c.shadowColor = 'rgba(40,20,60,0.28)'; c.shadowBlur = 22; c.shadowOffsetY = 10; c.fillStyle = '#d6d6e0';
+  c.beginPath(); c.rect(cx - Rp, yp, Rp * 2, th); c.ellipse(cx, yp + th, Rp, ry, 0, 0, 6.283); c.ellipse(cx, yp, Rp, ry, 0, 0, 6.283); c.fill(); c.restore();
+  const gr = c.createRadialGradient(cx - Rp * 0.3, yp - ry * 0.35, 10, cx, yp, Rp);
+  gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#ececf3');
+  c.fillStyle = gr; c.beginPath(); c.ellipse(cx, yp, Rp, ry, 0, 0, 6.283); c.fill();
+  c.strokeStyle = '#c9c9d6'; c.lineWidth = 2; c.beginPath(); c.ellipse(cx, yp, Rp - 1, Math.max(ry - 1, 0.5), 0, 0, 6.283); c.stroke();
+  c.fillStyle = 'rgba(120,120,150,0.12)'; c.beginPath(); c.ellipse(cx, yp, Rp * 0.78, ry * 0.78, 0, 0, 6.283); c.fill();                   // 안쪽 오목한 부분
+  c.strokeStyle = 'rgba(150,150,175,0.35)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(cx, yp, Rp * 0.78, ry * 0.78, 0, 0, 6.283); c.stroke();
+}
+
+// ---- 호박을 3D처럼 그리기: e = 카메라 높이각 (0 = 옆에서 보기, π/2 = 하늘에서 수직으로 내려다보기) ----
+let BGC = '#ffffff';                         // 배경색 (호박 안쪽 색이 따라가요)
+let PUMP = '#ff9a26';                        // 호박 색 (메뉴에서 바꿔요)
+function shade(hex, k) {                      // 색을 어둡게(k<1) / 밝게 만들기
+  return '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.slice(i, i + 2), 16) * k))).toString(16).padStart(2, '0')).join('');
+}
+const FK = 0.82;                              // 표정 크기 배율
+let CAPBOX = { x: 36, y: 60, w: 160, h: 60 };       // 문구가 그려진 자리 (끌어서 옮길 때 눌렀는지 확인용)
+let BATC = '#150a22';                         // 박쥐 색 (메뉴에서 바꿔요)
+let FLAT = true;                             // true: 2D(평면 그림) 스타일 / false: 3D 입체 스타일
+let FACE = { eyes: '1', mouth: '1', ears: 'none' };      // 얼굴 모양 (메뉴에서 골라요)
+const PK = { R: 126, HH: 68, H0: 0.95, LOBES: 10, BULGE: 0.085, POW: 2.4 };
+const PLATE_R = 150;                  // 접시 반지름
+const E0 = 0.28;                     // 처음 카메라 높이각 (살짝 위에서 비스듬히 내려다봐요)
+// 호박 단면: 공처럼 둥글지 않고, 어깨가 넓고 위아래가 납작한 "호박 모양" (1에 가까울수록 둥글고, POW가 클수록 네모에 가까워요)
+const prof = h => Math.pow(Math.max(0, 1 - Math.pow(Math.abs(h), PK.POW)), 1 / PK.POW);
+
+function pumpkinGeom(e, ps) {
+  const s = Math.sin(e), cc = Math.cos(e), R = PK.R * ps, HH = PK.HH * ps;
+  const kk = clamp((e - E0) / (Math.PI / 2 - E0), 0, 1);
+  const yb = lerp(318, 204, kk);                            // 호박 바닥(접시 중심)의 화면 높이: 위에서 볼수록 화면 가운데로
+  const cy = yb - HH * cc;                                  // 호박 중심의 화면 높이
+  const Y0 = HH * PK.H0, ro = R * prof(PK.H0);              // 구멍의 높이와 반지름
+  return { s: s, cc: cc, R: R, HH: HH, yb: yb, cy: cy, rySil: Math.sqrt(R * R * s * s + HH * HH * cc * cc),
+           ro: ro, ory: ro * s, ocy: cy - Y0 * cc };
+}
+// 카메라는 뚜껑이 열린 뒤 부드럽게 하늘로 올라가요
+function camAt(t) {
+  const ek = clamp((t - POP) / 0.9, 0, 1), e = E0 + (Math.PI / 2 - E0) * ek * ek * (3 - 2 * ek);
+  const ik = clamp((t - (POP + 0.12)) / 1.5, 0, 1), ease = 1 - Math.pow(1 - ik, 2);
+  const ps = 1 - 0.16 * ease;                               // 사진이 커질수록 호박은 조금 작아져요
+  return { e: e, ik: ik, ease: ease, ps: ps, g: pumpkinGeom(e, ps) };
+}
+
+function drawPumpkin(c, g, glow) {
+  const cx = 200, s = g.s, cc = g.cc, R = g.R, HH = g.HH, N = PK.LOBES;
+  const P = function (h, th, bulge) {                        // 호박 표면의 한 점 → 화면 좌표
+    const rho = R * prof(h) * (1 + (bulge === false ? 0 : PK.BULGE * Math.cos(N * th)));
+    return [cx + rho * Math.sin(th), g.cy - HH * h * cc + rho * Math.cos(th) * s];
+  };
+  // 몸통 바탕
+  const base = c.createRadialGradient(cx, g.cy - HH * 0.3, 10, cx, g.cy, Math.max(R, g.rySil));
+  base.addColorStop(0, shade(PUMP, 0.8)); base.addColorStop(1, shade(PUMP, 0.6));
+  c.fillStyle = base; c.beginPath(); c.ellipse(cx, g.cy, R * 0.9, g.rySil * 0.9, 0, 0, 6.283); c.fill();
+  // 진짜 3D처럼: 호박 표면을 잘게 쪼갠 조각들로 만들고, 조각마다 "빛을 받는 각도"로 밝기를 계산해서 칠해요
+  const NT = 120, NH = 26, h00 = -0.97, h11 = PK.H0;
+  const X3 = function (h, th) {                              // 3D 좌표 (x: 오른쪽, y: 위, z: 나 쪽)
+    const rho = R * prof(h) * (1 + PK.BULGE * Math.cos(N * th));
+    return [rho * Math.sin(th), HH * h, rho * Math.cos(th)];
+  };
+  const LX = -0.5, LY = 0.62, LZ = 0.6, LL = Math.hypot(LX, LY, LZ);     // 빛이 오는 방향 (왼쪽 위 앞)
+  const quads = [];
+  for (let hi = 0; hi < NH; hi++) {
+    const h0 = h00 + (h11 - h00) * hi / NH, h1 = h00 + (h11 - h00) * (hi + 1) / NH;
+    for (let ti = 0; ti < NT; ti++) {
+      const a0 = 2 * Math.PI * ti / NT, a1 = 2 * Math.PI * (ti + 1) / NT, am = (a0 + a1) / 2, hm = (h0 + h1) / 2;
+      const A = X3(h0, a0), B = X3(h0, a1), C = X3(h1, a1), D = X3(h1, a0);
+      // 면의 방향(법선) = 두 변의 외적
+      const ux = C[0] - A[0], uy = C[1] - A[1], uz = C[2] - A[2], vx = D[0] - B[0], vy = D[1] - B[1], vz = D[2] - B[2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      const mx = (A[0] + B[0] + C[0] + D[0]) / 4, my = (A[1] + B[1] + C[1] + D[1]) / 4, mz = (A[2] + B[2] + C[2] + D[2]) / 4;
+      if (nx * mx + nz * mz < 0) { nx = -nx; ny = -ny; nz = -nz; }          // 바깥쪽을 향하게
+      const ycn = ny * cc - nz * s, zcn = nz * cc + ny * s;                // 카메라 기준으로 돌리기
+      if (zcn < -0.05) continue;                                          // 뒷면은 안 그려요
+      const xcn = nx;
+      const dif = Math.max(0, (xcn * LX + ycn * LY + zcn * LZ) / LL);
+      const hz = 2 * ((xcn * LX + ycn * LY + zcn * LZ) / LL) * zcn - LZ / LL;      // 반짝이는 하이라이트
+      const spec = 0;
+      const ao = 0.72 + 0.28 * (Math.cos(N * am) + 1) / 2 * (0.55 + 0.45 * Math.min(1, (hm + 1) / 1.3));   // 줄무늬 사이 골은 어둡게
+      const lit = clamp((0.3 + 0.8 * dif) * (0.75 + 0.25 * ao), 0, 1);
+      const col = mixColor(shade(PUMP, 0.62), PUMP, lit);
+      let flatCol = null;
+      if (FLAT) { const j = Math.floor(((ti + 6) % NT) / 12); flatCol = (ti % 12 === 5) ? shade(PUMP, 0.84) : PUMP; }   // 2D: 줄무늬마다 한 가지 색 + 골은 어두운 선
+      quads.push({ d: mz * cc + my * s, p: [A, B, C, D], col: flatCol ? flatCol : spec > 0.02 ? mixColor('#ffa43c', '#fff2c8', Math.min(0.55, spec * 1.5)) : col });
+    }
+  }
+  // 귀 (고양이: 뾰족한 귀 + 분홍 속 / 강아지: 축 처진 귀). 몸통 조각들과 같이 앞뒤를 정렬해서 그려요
+  const earQ = [];
+  if (FACE.ears !== 'none') {
+    const k = R / PK.R, nrm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const mesh = function (fn, cfn, NH, NT, dark, light) {
+      for (let hi = 0; hi < NH; hi++) for (let ti = 0; ti < NT; ti++) {
+        const h0 = hi / NH, h1 = (hi + 1) / NH, a0 = 6.2832 * ti / NT, a1 = 6.2832 * (ti + 1) / NT;
+        const A = fn(h0, a0), B = fn(h0, a1), C2 = fn(h1, a1), D = fn(h1, a0), cc3 = cfn((h0 + h1) / 2);
+        const ux = C2[0] - A[0], uy = C2[1] - A[1], uz = C2[2] - A[2], vx = D[0] - B[0], vy = D[1] - B[1], vz = D[2] - B[2];
+        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+        const mx = (A[0] + B[0] + C2[0] + D[0]) / 4, my = (A[1] + B[1] + C2[1] + D[1]) / 4, mz = (A[2] + B[2] + C2[2] + D[2]) / 4;
+        if (nx * (mx - cc3[0]) + ny * (my - cc3[1]) + nz * (mz - cc3[2]) < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        const ycn = ny * cc - nz * s, zcn = nz * cc + ny * s;
+        if (zcn < -0.05) continue;
+        const dif = Math.max(0, (nx * LX + ycn * LY + zcn * LZ) / LL), lit = clamp(0.3 + 0.8 * dif, 0, 1);
+        earQ.push({ hh: (h0 + h1) / 2, d: mz * cc + my * s, p: [A, B, C2, D], col: mixColor(dark, light, lit) });
+      }
+    };
+    [-1, 1].forEach(function (sg) {
+      const surf = function (th0, hb, push) { const rho = R * prof(hb) * push; return [rho * Math.sin(th0) * sg, HH * hb, rho * Math.cos(th0)]; };
+      if (FACE.ears === 'cat') {                                       // 고양이 귀: 끝이 둥근 큼직한 삼각형, 호박과 같은 색
+        const C0 = surf(0.78, 0.8, 0.95), a = nrm([sg * 0.38, 0.92, 0.0]), u = nrm(cross(a, [0, 0, 1])), v = cross(a, u);
+        const L = 66 * k, rw = 31 * k, rt = 15 * k;
+        mesh(function (h, th) {
+          const r = Math.pow(Math.max(0, 1 - Math.pow(h, 2.6)), 0.5) * (1 - 0.15 * h), ru = rw * r * Math.cos(th), rv = rt * (1 + 0.7 * (1 - h)) * r * Math.sin(th);
+          return [C0[0] + a[0] * L * h + u[0] * ru + v[0] * rv, C0[1] + a[1] * L * h + u[1] * ru + v[1] * rv, C0[2] + a[2] * L * h + u[2] * ru + v[2] * rv];
+        }, function (h) { return [C0[0] + a[0] * L * h, C0[1] + a[1] * L * h, C0[2] + a[2] * L * h]; }, 18, 36, shade(PUMP, 0.78), shade(PUMP, 1.06));
+      } else {                                                          // 강아지 귀: 위쪽 양옆에 얹힌 동글납작한 귀
+        const C0 = surf(1.0, 0.9, 0.97), a = nrm([sg * 0.38, -0.88, 0.22]), u = nrm(cross(a, [0, 0, 1])), v = cross(a, u);
+        const L = 58 * k, rw = 27 * k, rt = 7.5 * k;                       // 접힌 귀: 위쪽이 넓고 아래로 갈수록 둥글게 좁아지는 납작한 잎 모양
+        const pt = function (h, th) {
+          const r = Math.pow(Math.max(0, 1 - Math.pow(h, 2.2)), 0.5), ru = rw * r * Math.cos(th), rv = rt * (1 + 0.8 * (1 - h)) * r * Math.sin(th);
+          const bend = Math.sin(Math.PI * Math.min(1, h * 1.1)) * 8 * k, out = sg * 12 * k * h * h;     // 접힌 듯 앞으로 살짝 휘고 끝은 바깥으로
+          return [C0[0] + a[0] * L * h + u[0] * ru + v[0] * rv + out, C0[1] + a[1] * L * h + u[1] * ru + v[1] * rv, C0[2] + a[2] * L * h + u[2] * ru + v[2] * rv + bend];
+        };
+        mesh(pt, function (h) { return pt(h, 0).map((x, i) => i === 0 ? C0[0] + a[0] * L * h + sg * 12 * k * h * h : (i === 1 ? C0[1] + a[1] * L * h : C0[2] + a[2] * L * h)); }, 18, 36, shade(PUMP, 0.72), shade(PUMP, 1.06));
+      }
+    });
+  }
+  quads.sort((q1, q2) => q1.d - q2.d);
+  c.lineWidth = 0.9; c.lineJoin = 'round';
+  const poly = function (q) { c.beginPath(); q.p.forEach(function (v, i) { const x = cx + v[0], y = g.cy - v[1] * cc + v[2] * s; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); };
+  const drawEars = function () {                    // 귀: 먼저 모두 굵은 어두운 선으로 윤곽을 깔고, 그 위에 면을 칠해서 바깥 윤곽선만 남겨요
+    earQ.sort((q1, q2) => q1.d - q2.d);
+    c.lineWidth = 3; earQ.forEach(function (q) { if (q.hh < 0.3) return; c.globalAlpha = clamp((q.hh - 0.3) / 0.25, 0, 1); c.strokeStyle = shade(PUMP, 0.58); poly(q); c.stroke(); }); c.globalAlpha = 1;   // 뿌리 쪽은 윤곽선 없이 호박과 자연스럽게 이어져요
+    c.lineWidth = 0.9; earQ.forEach(function (q) { c.fillStyle = q.col; c.strokeStyle = q.col; poly(q); c.fill(); c.stroke(); });
+  };
+  const earsLast = true;                          // 위에서 내려다볼 때는 귀가 몸통 위로 보여요
+  if (!earsLast) drawEars();
+  if (FLAT) { c.lineWidth = 3.4; c.strokeStyle = shade(PUMP, 0.74); quads.forEach(function (q) { poly(q); c.stroke(); }); c.lineWidth = 0.9; }   // 2D: 바깥 윤곽선 (먼저 굵게 깔고 면으로 덮어요)
+  quads.forEach(function (q) { c.fillStyle = q.col; c.strokeStyle = q.col; poly(q); c.fill(); c.stroke(); });
+  if (earsLast) drawEars();
+  // 얼굴 (옆에서 볼 때만 보여요. 위에서 보면 사라져요)
+  const fa = clamp((cc - 0.42) * 10, 0, 1);     // 얼굴은 정면에 가까울 때만 (반투명하게 비치지 않도록 빠르게 켜고 꺼요)
+  if (fa > 0.02) {
+    const ps = R / PK.R;
+    const F = function (xb, yb) {                           // 옛 평면 좌표 → 둥근 호박 표면 위의 점
+      xb = 200 + (xb - 200) * FK; yb = 262 + (yb - 262) * FK;       // 표정 전체 크기 줄이기
+      const X = (xb - 200) * ps, Y = (275 - yb) * ps;
+      const Z = R * Math.sqrt(Math.max(0, 1 - X * X / (R * R) - Y * Y / (HH * HH)));
+      return [cx + X, g.cy - Y * cc + Z * s];
+    };
+    c.save(); c.globalAlpha = fa;
+    if (glow > 0.01) { c.shadowColor = '#ffb300'; c.shadowBlur = 22 * glow; }
+    c.fillStyle = mixColor('#2b0d00', '#ffe27a', clamp((glow - 0.3) / 0.4, 0, 1));
+    const fill = c.fillStyle, W2 = 2.4 * ps;
+    const path = function (list) { list.forEach((q, i) => { const p = F(q[0], q[1]); i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }); };
+    const eyeX = [158, 242], ey = 252, er = 7;
+    eyeX.forEach(function (ex) {                                         // 눈
+      c.beginPath();
+      if (FACE.eyes === '2') { const pts = [[ex - er, ey - 4]]; for (let i = 0; i <= 12; i++) { const an = Math.PI * i / 12; pts.push([ex - er * Math.cos(an), ey - 4 - er * Math.sin(an) * 1.0 * -1]); } path(pts); }   // 반달: 윗면은 평평, 아래는 동그랗게
+      else { const pts = []; for (let i = 0; i < 24; i++) { const an = 6.283 * i / 24; pts.push([ex + er * Math.cos(an), ey + er * Math.sin(an)]); } path(pts); }   // 동그란 눈
+      c.closePath(); c.fill();
+    });
+    c.strokeStyle = fill; c.lineWidth = W2; c.lineCap = 'round'; c.lineJoin = 'round';
+    if (FACE.mouth === '2') {                                            // 입2: ㅅ 모양
+      c.beginPath(); path([[202, 264], [193, 272]]); c.stroke();
+      c.beginPath(); path([[200, 266], [209, 272]]); c.stroke();
+    } else {                                                             // 입1: 웃는 입
+      const pts = []; for (let i = 0; i <= 14; i++) { const k = i / 14, u = 1 - k; pts.push([u * u * 193 + 2 * u * k * 200 + k * k * 207, u * u * 266 + 2 * u * k * 275 + k * k * 266]); }
+      c.beginPath(); path(pts); c.stroke();
+    }
+    c.restore();
+  }
+  // 위쪽 구멍 (뚜껑 자리): 위에서 볼수록 동그랗게 열려요
+  c.save(); c.translate(cx, g.ocy); c.scale(1, Math.max(g.s, 0.02));
+  const gr = c.createRadialGradient(0, 0, 2, 0, 0, g.ro + 2);
+  gr.addColorStop(0, shade(BGC, 0.86)); gr.addColorStop(1, shade(BGC, 0.74));      // 안쪽: 배경색보다 조금 진하게
+  c.fillStyle = gr; c.beginPath(); c.arc(0, 0, g.ro, 0, 6.283); c.fill(); c.restore();
+  c.strokeStyle = 'rgba(255,190,110,0.55)'; c.lineWidth = 1.5;
+  c.beginPath(); c.ellipse(cx, g.ocy, g.ro, g.ory, 0, 0, 6.283); c.stroke();
+}
+
+function drawFrontLip(c, g, alpha) {         // 구멍의 앞쪽 테두리 (사진이 뒤에서 올라오는 느낌)
+  if (alpha <= 0.01 || g.ory < 0.5) return;
+  c.save(); c.globalAlpha = alpha;
+  c.strokeStyle = '#a33a00'; c.lineWidth = 5; c.lineCap = 'round';
+  c.beginPath(); c.ellipse(200, g.ocy, g.ro, g.ory, 0, 0.05, Math.PI - 0.05); c.stroke();
+  c.restore();
+}
+
+// 뚜껑: e = 카메라 높이각 (옆에서 볼 때는 돔 모양, 위에서 볼 때는 동그란 원판 + 가운데 꼭지)
+function drawLid(c, x, y, rot, e) {
+  e = e || 0;
+  const s = Math.sin(e), cc = Math.cos(e), N = PK.LOBES;
+  const LR = PK.R * prof(PK.H0) + 1, LH = 27;                 // 뚜껑 반지름 / 높이
+  // 뚜껑 = 돔(둥근 지붕) + 꼭지(살짝 휜 줄기). 둘 다 "회전체 표면"을 조각내서 빛 계산으로 칠해요 (호박 몸통과 같은 방식)
+  const dome = function (h, th) {
+    const r = (9 + (LR - 9) * Math.pow(1 - Math.pow(h, 2.4), 0.55)) * (1 + 0.05 * Math.cos(N * th) * (1 - h));
+    return [r * Math.sin(th), LH * h, r * Math.cos(th), 0];
+  };
+  const stem = function (h, th) {
+    const r = 7.5 - 3 * h, bend = 7 * h * h;
+    return [r * Math.sin(th) + bend, LH * 0.93 + 20 * h, r * Math.cos(th), bend];
+  };
+  const LX = -0.5, LY = 0.62, LZ = 0.6, LL = Math.hypot(LX, LY, LZ), quads = [];
+  const build = function (fn, NH, NT, dark, light, isStem) {
+    for (let hi = 0; hi < NH; hi++) {
+      const h0 = hi / NH, h1 = (hi + 1) / NH;
+      for (let ti = 0; ti < NT; ti++) {
+        const a0 = 2 * Math.PI * ti / NT, a1 = 2 * Math.PI * (ti + 1) / NT, am = (a0 + a1) / 2;
+        const A = fn(h0, a0), B = fn(h0, a1), C = fn(h1, a1), D = fn(h1, a0);
+        const ux = C[0] - A[0], uy = C[1] - A[1], uz = C[2] - A[2], vx = D[0] - B[0], vy = D[1] - B[1], vz = D[2] - B[2];
+        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+        const mx = (A[0] + B[0] + C[0] + D[0]) / 4 - (A[3] + C[3]) / 2, my = (A[1] + B[1] + C[1] + D[1]) / 4, mz = (A[2] + B[2] + C[2] + D[2]) / 4;
+        if (nx * mx + nz * mz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        const ycn = ny * cc - nz * s, zcn = nz * cc + ny * s;
+        if (zcn < -0.05) continue;
+        const dif = Math.max(0, (nx * LX + ycn * LY + zcn * LZ) / LL);
+        const ao = isStem ? 1 : 0.78 + 0.22 * (Math.cos(N * am) + 1) / 2;
+        const lit = clamp((0.3 + 0.8 * dif) * (0.75 + 0.25 * ao), 0, 1);
+        let col = mixColor(dark, light, lit);
+        if (FLAT) col = isStem ? (Math.sin(am) > 0.2 ? '#4f6b1f' : '#6a9628') : (ti % 8 === 3 ? shade(PUMP, 0.84) : PUMP);
+        quads.push({ d: mz * cc + my * s, p: [A, B, C, D], col: col });
+      }
+    }
+  };
+  build(dome, 14, 80, shade(PUMP, 0.62), PUMP, false);
+  build(stem, 6, 16, '#2f4a12', '#9cc43f', true);
+  quads.sort((q1, q2) => q1.d - q2.d);
+  c.save(); c.translate(x, y + 2); c.rotate(rot); c.lineWidth = 0.9; c.lineJoin = 'round';
+  if (FLAT) { c.lineWidth = 3.2; c.strokeStyle = shade(PUMP, 0.74); quads.forEach(function (q) { c.beginPath(); q.p.forEach(function (v, i) { const px = v[0], py = -v[1] * cc + v[2] * s; i ? c.lineTo(px, py) : c.moveTo(px, py); }); c.closePath(); c.stroke(); }); c.lineWidth = 0.9; }
+  quads.forEach(function (q) {
+    c.fillStyle = q.col; c.strokeStyle = q.col; c.beginPath();
+    q.p.forEach(function (v, i) { const px = v[0], py = -v[1] * cc + v[2] * s; i ? c.lineTo(px, py) : c.moveTo(px, py); });
+    c.closePath(); c.fill(); c.stroke();
+  });
+  c.restore();
+}
+
+function drawBat(c, x, y, size, flap) {
+  c.save(); c.translate(x, y);
+  c.fillStyle = BATC;
+  const fy = flap * size * 0.55;
+  for (let side = -1; side <= 1; side += 2) {
+    c.save(); c.scale(side, 1);
+    c.beginPath(); c.moveTo(3, 0);
+    c.quadraticCurveTo(size * 0.6, -size * 0.9 - fy, size * 1.25, -size * 0.35 - fy * 0.6);
+    c.quadraticCurveTo(size * 1.05, -size * 0.1 - fy * 0.2, size * 0.85, size * 0.15 - fy * 0.1);
+    c.quadraticCurveTo(size * 0.68, -size * 0.02, size * 0.52, size * 0.28);
+    c.quadraticCurveTo(size * 0.35, size * 0.05, 3, size * 0.32);
+    c.closePath(); c.fill();
+    c.restore();
+  }
+  c.beginPath(); c.ellipse(0, size * 0.1, size * 0.22, size * 0.38, 0, 0, 6.283); c.fill();     // 몸
+  c.beginPath(); c.arc(0, -size * 0.22, size * 0.2, 0, 6.283); c.fill();                          // 머리
+  c.beginPath(); c.moveTo(-size * 0.19, -size * 0.3); c.lineTo(-size * 0.15, -size * 0.55); c.lineTo(-size * 0.04, -size * 0.38); c.fill();
+  c.beginPath(); c.moveTo(size * 0.19, -size * 0.3); c.lineTo(size * 0.15, -size * 0.55); c.lineTo(size * 0.04, -size * 0.38); c.fill();
+  c.fillStyle = '#ff4d4d';
+  c.beginPath(); c.arc(-size * 0.08, -size * 0.24, Math.max(1, size * 0.045), 0, 6.283); c.arc(size * 0.08, -size * 0.24, Math.max(1, size * 0.045), 0, 6.283); c.fill();
+  c.restore();
+}
+
+function candyAt(cd, t) {                 // 사탕이 t초에 어디 있는지 (사방으로 튀어나가 천천히 떨어져요)
+  const a = t - cd.t0; if (a < 0) return null;
+  const y0 = camAt(cd.t0).g.ocy;
+  return { x: 200 + cd.vx * a, y: y0 + cd.vy * a + 0.5 * 420 * a * a, rot: cd.rot + cd.rotV * a };
+}
+
+function drawCandy(c, cd, p) {
+  const s = cd.size;
+  c.save(); c.translate(p.x, p.y); c.rotate(p.rot);
+  if (cd.type === 0) {                   // 포장 사탕
+    c.fillStyle = cd.color;
+    c.beginPath(); c.moveTo(-s * 0.9, 0); c.lineTo(-s * 1.7, -s * 0.7); c.lineTo(-s * 1.7, s * 0.7); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(s * 0.9, 0); c.lineTo(s * 1.7, -s * 0.7); c.lineTo(s * 1.7, s * 0.7); c.closePath(); c.fill();
+    c.beginPath(); c.ellipse(0, 0, s, s * 0.68, 0, 0, 6.283); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = 2.2;
+    c.beginPath(); c.moveTo(-s * 0.35, -s * 0.6); c.lineTo(-s * 0.05, s * 0.62); c.moveTo(s * 0.25, -s * 0.64); c.lineTo(s * 0.55, s * 0.5); c.stroke();
+  } else if (cd.type === 1) {            // 캔디콘
+    c.save(); c.beginPath(); c.moveTo(0, -s * 1.1); c.lineTo(s * 0.9, s * 0.8); c.lineTo(-s * 0.9, s * 0.8); c.closePath(); c.clip();
+    c.fillStyle = '#ffffff'; c.fillRect(-s, -s * 1.2, s * 2, s * 0.8);
+    c.fillStyle = '#ff9a1f'; c.fillRect(-s, -s * 0.4, s * 2, s * 0.65);
+    c.fillStyle = '#ffd93d'; c.fillRect(-s, s * 0.25, s * 2, s);
+    c.restore();
+  } else {                               // 막대사탕
+    c.strokeStyle = '#f2eadf'; c.lineWidth = 3; c.beginPath(); c.moveTo(0, s * 0.8); c.lineTo(0, s * 2.1); c.stroke();
+    c.fillStyle = cd.color; c.beginPath(); c.arc(0, 0, s * 0.95, 0, 6.283); c.fill();
+    c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.beginPath();
+    for (let a = 0; a < 12.5; a += 0.3) { const rr = a * s * 0.06; const px = Math.cos(a) * rr, py = Math.sin(a) * rr; if (a === 0) c.moveTo(px, py); else c.lineTo(px, py); }
+    c.stroke();
+  }
+  c.restore();
+}
+
+function drawSpark(c, x, y, size, color, star) {
+  c.fillStyle = color;
+  if (!star) { c.beginPath(); c.arc(x, y, size, 0, 6.283); c.fill(); return; }
+  c.beginPath();
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, r = i % 2 ? size * 0.45 : size * 1.8; c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+  c.closePath(); c.fill();
+}
+
+// 사진 카드(액자+그림자)를 한 번만 만들어 두고 계속 써요. 투명 PNG는 액자 없이 모양 그대로예요.
+function makeCard(img) {
+  if (img.card) return img.card;
+  const box = 150, k = Math.min(box / img.width, box / img.height), w = img.width * k, h = img.height * k, pad = 24, R = 4;
+  const cv = document.createElement('canvas'); cv.width = Math.ceil((w + pad * 2) * R); cv.height = Math.ceil((h + pad * 2) * R);
+  const c = cv.getContext('2d'); c.scale(R, R); c.translate(cv.width / R / 2, cv.height / R / 2);
+  c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = 16; c.shadowOffsetY = 4;
+  if (img.hasAlpha) { c.drawImage(img.canvas, -w / 2, -h / 2, w, h); }
+  else {
+    c.fillStyle = '#fff'; roundRectPath(c, -w / 2 - 6, -h / 2 - 6, w + 12, h + 12, 14); c.fill();
+    c.shadowColor = 'transparent'; roundRectPath(c, -w / 2, -h / 2, w, h, 9); c.clip();
+    c.drawImage(img.canvas, -w / 2, -h / 2, w, h);
+  }
+  img.card = { canvas: cv, w: cv.width / R, h: cv.height / R };
+  return img.card;
+}
+
+// 사진은 처음처럼 정면 그대로 그려요 (호박이 내려다봐도 사진은 따라 기울지 않아요)
+function drawUserImage(c, img, x, y, scale, rot) {
+  const card = makeCard(img);
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(scale, scale);
+  c.drawImage(card.canvas, -card.w / 2, -card.h / 2, card.w, card.h);
+  c.restore();
+}
+
+// 사진 장수별 최종 자리 (x, y는 호박 가운데에서 떨어진 거리, s는 크기, r은 기울기)
+const SLOTS = {
+  1: [{ x: 0, y: 0, s: 1.5, r: 0 }],
+  2: [{ x: -62, y: 0, s: 1.2, r: -0.1 }, { x: 62, y: 0, s: 1.2, r: 0.1 }],
+  3: [{ x: -66, y: -34, s: 1.05, r: -0.1 }, { x: 66, y: -34, s: 1.05, r: 0.1 }, { x: 0, y: 46, s: 1.05, r: 0.03 }],
+  4: [{ x: -62, y: -52, s: 0.98, r: -0.08 }, { x: 62, y: -52, s: 0.98, r: 0.08 }, { x: -62, y: 52, s: 0.98, r: 0.07 }, { x: 62, y: 52, s: 0.98, r: -0.07 }]
+};
+
+// ★ 핵심: t초일 때의 장면을 통째로 그려요 ★
+//   opts = { scene, bg, imgs, caption, scale, hint, idleT }
+function render(ctx, t, o) {
+  const c = ctx; FLAT = o.flat !== false; BATC = o.batColor || '#150a22'; PUMP = o.pumpkin || '#ff9a26'; BGC = o.bg || '#ffffff'; FACE = { eyes: o.eyes || '1', mouth: o.mouth || '1', ears: o.ears || 'none' };
+  c.save(); c.setTransform(o.scale, 0, 0, o.scale, 0, 0);
+  c.clearRect(0, 0, W, H);
+  drawBackground(c, o.bg);
+  const bgImg = o.bgImage;                                       // 따로 고른 배경 사진 (크게 확대해서 반투명하게)
+  if (bgImg) {
+    const k = Math.max(W / bgImg.width, H / bgImg.height) * (o.bgZoom || 1.6);
+    c.save(); const bk = clamp((t - POP) / 1.5, 0, 1); c.globalAlpha = (o.bgOpacity === undefined ? 0.5 : o.bgOpacity) * bk * bk * (3 - 2 * bk);   // 뚜껑이 열리면 천천히 나타나요
+    if (bk > 0) c.drawImage(bgImg.canvas, (W - bgImg.width * k) / 2, (H - bgImg.height * k) / 2, bgImg.width * k, bgImg.height * k); c.restore();
+  }
+
+  const glow = t < POP ? 0.1 * clamp((t - IDLE) / (POP - IDLE), 0, 1) : clamp((t - POP + 0.05) / 0.25, 0, 1);
+  const a = t - POP;
+  const cam = camAt(t), g = cam.g, e = cam.e;
+
+  // 몸통 움직임: 가만히 숨쉬기 → 점점 세게 흔들기 → 펑! 하고 출렁
+  let rot = 0, sx = 1, sy = 1, dx = 0;
+  if (t < IDLE) { const b = Math.sin((o.idleT !== undefined ? o.idleT : t) * 3); sy = 1 + 0.012 * b; sx = 1 - 0.006 * b; }
+  else if (t < POP) { const k = (t - IDLE) / (POP - IDLE); rot = Math.sin((t - IDLE) * 36) * (0.02 + 0.09 * k * k); dx = Math.sin((t - IDLE) * 36 + 1) * 3 * k; sy = 1 - 0.02 * k; }
+  else { const dec = Math.exp(-6 * a); sy = 1 + 0.16 * dec * Math.cos(20 * a); sx = 1 - 0.1 * dec * Math.cos(20 * a); }
+  const piv = g.yb, ocy = piv + (g.ocy - piv) * sy;          // 흔들림까지 반영한 구멍 중심의 실제 높이
+
+  drawCloth(c, g, o.cloth || '#e8576b');                    // 체크 테이블보 (맨 아래)
+  // 접시 뒤의 8각별 두 개 (오른쪽 위 / 왼쪽 아래): 뚜껑이 열리면 투명 → 선명하게 나타나면서, 처음엔 빠르게 돌다가 천천히 멈춰요
+  const starK = clamp((t - POP) / 1.0, 0, 1);
+  if (starK > 0) {
+    const sk = clamp((t - POP) / 3.3, 0, 1), spin = 4 * Math.PI * (1 - Math.pow(1 - sk, 3));    // 2바퀴를 도는데 점점 느려져요
+    const alpha = starK * starK * (3 - 2 * starK), sc = starCanvas(o.starColor || '#ffd54a');
+    [[326, 86, 1, 1], [74, 318, -1, 0.9]].forEach(function (st) {          // 네 번째 값이 크기 배율 (아래쪽 별은 살짝 작게)
+      c.save(); c.globalAlpha = alpha; c.translate(st[0], st[1]); c.scale(st[3], st[3]); c.rotate(st[2] * spin - Math.PI / 2); c.drawImage(sc, -sc.width / 2, -sc.height / 2); c.restore();
+    });
+  }
+  drawPlate(c, g);                                           // 접시
+  c.fillStyle = 'rgba(30,10,40,0.30)'; c.beginPath();        // 호박이 접시에 드리운 그림자
+  c.ellipse(200, g.yb, g.R * 0.98, g.R * 0.98 * g.s + 5, 0, 0, 6.283); c.fill();
+
+  // 빛: 옆에서 볼 때는 위로 뻗는 빛줄기, 위에서 볼 때는 구멍 둘레의 환한 빛무리
+  if (t >= POP) {
+    const ba = glow * (0.8 + 0.2 * Math.sin(t * 8));
+    if (g.cc > 0.02) {
+      const bg = c.createLinearGradient(0, ocy, 0, 10);
+      bg.addColorStop(0, 'rgba(255,200,70,' + (0.38 * ba * g.cc) + ')'); bg.addColorStop(1, 'rgba(255,200,70,0)');
+      c.fillStyle = bg; c.beginPath(); c.moveTo(156, ocy); c.lineTo(244, ocy); c.lineTo(330, 10); c.lineTo(70, 10); c.closePath(); c.fill();
+    }
+    if (g.s > 0.02) {
+      const hg = c.createRadialGradient(200, ocy, 10, 200, ocy, 190);
+      hg.addColorStop(0, 'rgba(255,200,70,' + (0.4 * ba * g.s) + ')'); hg.addColorStop(1, 'rgba(255,200,70,0)');
+      c.fillStyle = hg; c.fillRect(0, 0, W, H);
+    }
+  }
+
+  const body = function (fn) {
+    c.save(); c.translate(200 + dx, piv); c.rotate(rot); c.scale(sx, sy); c.translate(-200, -piv); fn(); c.restore();
+  };
+  body(function () { drawPumpkin(c, g, glow); });
+
+  // 튀어나오는 사진들: 호박 속에서 위로 올라오며 점점 커지다가 마지막엔 크기 유지.
+  // (카메라가 하늘로 올라가므로 마지막엔 구멍 바로 위에 정면으로 떠 있어요. 여러 장이면 자리를 나눠 가져요)
+  const imgs = o.imgs || [], n = Math.min(imgs.length, 4), slots = SLOTS[n] || [];
+  let firstFree = 1;
+  for (let i = 0; i < n; i++) {
+    const ik = clamp((t - (POP + 0.12 + 0.14 * i)) / 1.5, 0, 1); if (ik <= 0) continue;
+    const ease = 1 - Math.pow(1 - ik, 2), sl = slots[i], img = imgs[i];
+    const rise = lerp(0, 105, easeOutCubic(ik));                       // 구멍에서 위로 올라온 높이
+    const free = clamp(rise / 75, 0, 1), freeS = free * free * (3 - 2 * free);   // 구멍을 완전히 빠져나온 정도
+    if (i === 0) firstFree = freeS;
+    const sc = lerp(0.2, sl.s, ease);
+    const x = 200 + dx * 0.3 + sl.x * ease, y = ocy - rise * g.cc + sl.y * ease * g.s;
+    const r = (1 - ease) * 0.35 + sl.r * ease + Math.sin(t * 2.2 + i * 1.7) * 0.035 * ease;
+    if (g.s > 0.05 && !img.hasAlpha) {                                  // 사진이 아래에 드리우는 그림자 (투명 PNG는 모양 그대로라 생략)
+      const k0 = Math.min(150 / img.width, 150 / img.height);
+      c.save(); c.globalAlpha = 0.4 * g.s * ease; c.translate(x, y + 14 * g.s); c.rotate(r); c.scale(sc, sc);
+      c.shadowColor = '#000'; c.shadowBlur = 18; c.fillStyle = '#000';
+      roundRectPath(c, -img.width * k0 / 2, -img.height * k0 / 2, img.width * k0, img.height * k0, 12); c.fill();
+      c.restore();
+    }
+    c.save();
+    if (freeS < 1) { c.beginPath(); c.rect(0, 0, W, lerp(ocy + g.ory * 0.65, H + 60, freeS)); c.clip(); }
+    drawUserImage(c, img, x, y, sc, r);
+    c.restore();
+  }
+  body(function () { if (t >= POP) drawFrontLip(c, g, 1 - firstFree); });
+  if (t < POP) body(function () { drawLid(c, 200, g.ocy - 1, 0, e); });      // 아직 닫혀 있을 때는 몸통과 함께 흔들려요
+
+  // 날아가는 뚜껑: 위로 튀어 올랐다가 왼쪽 아래로 떨어져 사라져요
+  if (t >= POP) {
+    const y0 = camAt(POP).g.ocy - 1;
+    c.save(); c.translate(200 - 260 * a, y0 - 520 * a + 1300 * a * a); drawLid(c, 0, 0, -7 * a, e); c.restore();
+  }
+
+  // 박쥐
+  o.scene.bats.forEach(function (bt) {
+    const ba = t - bt.t0; if (ba < 0) return;
+    const d = bt.sp * ba, wob = Math.sin(ba * bt.wobF) * bt.wob;
+    const px = 200 + Math.cos(bt.ang) * d - Math.sin(bt.ang) * wob, py = ocy + Math.sin(bt.ang) * d + Math.cos(bt.ang) * wob;
+    if (px < -60 || px > W + 60 || py < -60 || py > H + 60) return;
+    drawBat(c, px, py, bt.size * (0.5 + Math.min(1, ba * 1.2) * 0.9), Math.sin(ba * bt.flapSp + bt.ph));
+  });
+  // 사탕
+  o.scene.candies.forEach(function (cd) { const p = candyAt(cd, t); if (p) drawCandy(c, cd, p); });
+  // 반짝이: 구멍에서 사방으로 분사 (밝게 겹쳐 그리기)
+  c.save();
+  o.scene.sparks.forEach(function (sp, i) {
+    const sa = t - sp.t0; if (sa < 0) return;
+    const cyc = Math.floor(sa / sp.life); if (cyc >= 1) return;     // 한 번 터져서 화면 밖으로
+    const u = sa - cyc * sp.life, ph = u / sp.life, spd = sp.sp * (cyc === 0 ? 1 : 0.45);
+    const ang = sp.ang + cyc * 1.3, oy = camAt(sp.t0 + cyc * sp.life).g.ocy;
+    c.globalAlpha = (ph < 0.8 ? 1 : (1 - ph) / 0.2) * 0.95;
+    drawSpark(c, 200 + Math.cos(ang) * spd * u, oy + Math.sin(ang) * spd * u + 0.5 * 80 * u * u, sp.size * (1 - 0.25 * ph), sp.color, sp.star);
+  });
+  c.restore();
+
+  // 문구: 왼쪽 위에 살짝 기울여서 (그 밑에 작게 Happy Halloween!)
+  const capGuide = o.hint && t < POP;                                   // 편집 중(열기 전)에는 문구를 흐리게 미리 보여 줘서 끌어서 옮길 수 있어요
+  if (t > POP || capGuide) {
+    const k = capGuide ? 0.9 : clamp((t - POP) / 1.0, 0, 1), ke = capGuide ? 1 : easeOutBack(k);   // 별과 같은 순간에 같은 속도로 나타나요
+    c.save(); c.translate((o.capX === undefined ? 36 : o.capX) - 24 * (1 - ke), o.capY === undefined ? 98 : o.capY); c.rotate(-0.08); c.globalAlpha = k; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.lineJoin = 'round';
+    let ty = 0, capw = 0;
+    if (o.caption) {
+      let fs = 40; c.font = 'italic 900 ' + fs + 'px sans-serif';
+      while (c.measureText(o.caption).width > 300 && fs > 14) { fs--; c.font = 'italic 900 ' + fs + 'px sans-serif'; }
+      c.lineWidth = 7; c.strokeStyle = '#ffffff'; c.strokeText(o.caption, 0, 0); c.fillStyle = o.capColor || '#1b0f2a'; c.fillText(o.caption, 0, 0); ty = 24; capw = c.measureText(o.caption).width;
+    }
+    c.font = 'italic 800 17px sans-serif'; const hhw = c.measureText('Happy Halloween!').width; c.lineWidth = 5; c.strokeStyle = '#ffffff'; c.strokeText('Happy Halloween!', 1, ty); c.fillStyle = o.hhColor || '#ff7a12'; c.fillText('Happy Halloween!', 1, ty);
+    CAPBOX = { x: o.capX === undefined ? 36 : o.capX, y: (o.capY === undefined ? 98 : o.capY) - (o.caption ? 38 : 14), w: Math.max(hhw, capw) + 8, h: (o.caption ? 38 : 14) + ty + 8 };
+    c.restore();
+  }
+  // 바코드 스티커: 오른쪽 아래에 살짝 기울여서 "탁" 붙어요
+  if (t > POP) {
+    const k = clamp((t - POP) / 1.0, 0, 1), sc = 1.15 * (1 + 0.35 * (1 - easeOutCubic(k)));
+    const label = '4827 1093 5561 7302', r = rng(label.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7));
+    c.save(); c.translate(300, 318); c.rotate(0.08); c.scale(sc, sc); c.globalAlpha = k;
+    c.shadowColor = 'rgba(0,0,0,0.28)'; c.shadowBlur = 8; c.shadowOffsetY = 2; c.fillStyle = '#ffffff'; roundRectPath(c, -62, -27, 124, 54, 3); c.fill(); c.shadowBlur = 0; c.shadowOffsetY = 0;
+    c.fillStyle = '#111'; let bx = -54; while (bx < 52) { const w = 1 + Math.floor(r() * 3), gap = 1 + Math.floor(r() * 2); c.fillRect(bx, -21, w, 31); bx += w + gap; }
+    c.font = '700 8.5px monospace'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(label, 0, 21);
+    c.restore();
+  }
+  c.restore();
+}
+
+// =====================================================================
+//  4) 기본 사진 (유령) 만들기
+// =====================================================================
+function makeGhostImage() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 200;
+  const c = cv.getContext('2d');
+  const g = c.createLinearGradient(0, 0, 0, 200); g.addColorStop(0, '#4b2a86'); g.addColorStop(1, '#241046');
+  c.fillStyle = g; c.fillRect(0, 0, 200, 200);
+  c.fillStyle = '#fff'; c.shadowColor = 'rgba(200,170,255,0.9)'; c.shadowBlur = 18;
+  c.beginPath(); c.moveTo(48, 170); c.lineTo(48, 90); c.bezierCurveTo(48, 20, 152, 20, 152, 90); c.lineTo(152, 170);
+  c.quadraticCurveTo(138, 150, 125, 170); c.quadraticCurveTo(112, 190, 100, 170); c.quadraticCurveTo(88, 150, 75, 170); c.quadraticCurveTo(62, 190, 48, 170); c.fill();
+  c.shadowBlur = 0; c.fillStyle = '#1a0b2e';
+  c.beginPath(); c.ellipse(80, 90, 9, 13, 0, 0, 6.283); c.ellipse(120, 90, 9, 13, 0, 0, 6.283); c.fill();
+  c.beginPath(); c.ellipse(100, 120, 8, 11, 0, 0, 6.283); c.fill();
+  c.fillStyle = 'rgba(255,120,170,0.55)';
+  c.beginPath(); c.ellipse(66, 112, 8, 5, 0, 0, 6.283); c.ellipse(134, 112, 8, 5, 0, 0, 6.283); c.fill();
+  return { canvas: cv, width: 200, height: 200, ghost: true };
+}
+
+// =====================================================================
+//  5) GIF 인코더 (직접 만든 작은 버전 — 외부 라이브러리 필요 없어요)
+// =====================================================================
+// 모든 프레임의 색을 모아서 256색 팔레트를 만들어요 (median cut 방식)
+function buildPalette(frames) {
+  const N = 32768, count = new Float64Array(N), sr = new Float64Array(N), sg = new Float64Array(N), sb = new Float64Array(N);
+  frames.forEach(function (d) {
+    for (let i = 0; i < d.length; i += 12) {        // 3픽셀마다 하나씩 살펴봐요 (빠르게)
+      const r = d[i], g = d[i + 1], b = d[i + 2], k = (r >> 3) << 10 | (g >> 3) << 5 | (b >> 3);
+      count[k]++; sr[k] += r; sg[k] += g; sb[k] += b;
+    }
+  });
+  let boxes = [[]];
+  for (let k = 0; k < N; k++) if (count[k]) boxes[0].push(k);
+  const ch = function (k, axis) { return axis === 0 ? k >> 10 : axis === 1 ? (k >> 5) & 31 : k & 31; };
+  while (boxes.length < 256) {
+    let bi = -1, bScore = 0, bAxis = 0;
+    boxes.forEach(function (b, i) {
+      if (b.length < 2) return;
+      for (let axis = 0; axis < 3; axis++) {
+        let mn = 31, mx = 0, tot = 0;
+        b.forEach(function (k) { const v = ch(k, axis); if (v < mn) mn = v; if (v > mx) mx = v; tot += count[k]; });
+        const score = (mx - mn) * Math.sqrt(tot);
+        if (score > bScore) { bScore = score; bi = i; bAxis = axis; }
+      }
+    });
+    if (bi < 0) break;
+    const b = boxes[bi]; b.sort(function (x, y) { return ch(x, bAxis) - ch(y, bAxis); });
+    let total = 0; b.forEach(function (k) { total += count[k]; });
+    let acc = 0, cut = 1;
+    for (let i = 0; i < b.length - 1; i++) { acc += count[b[i]]; if (acc >= total / 2) { cut = i + 1; break; } cut = i + 1; }
+    boxes.splice(bi, 1, b.slice(0, cut), b.slice(cut));
+  }
+  const palette = new Uint8Array(256 * 3);
+  boxes.forEach(function (b, i) {
+    let n = 0, r = 0, g = 0, bl = 0;
+    b.forEach(function (k) { n += count[k]; r += sr[k]; g += sg[k]; bl += sb[k]; });
+    palette[i * 3] = Math.round(r / n); palette[i * 3 + 1] = Math.round(g / n); palette[i * 3 + 2] = Math.round(bl / n);
+  });
+  // 색 → 가장 가까운 팔레트 번호 표 (채널당 6비트로 촘촘하게: 색 단계가 거칠어서 생기는 띠 무늬를 줄여요)
+  const M = 262144, lut = new Uint8Array(M), pc = boxes.length;
+  for (let k = 0; k < M; k++) {
+    const r = (k >> 12) << 2 | 2, g = ((k >> 6) & 63) << 2 | 2, b = (k & 63) << 2 | 2;
+    let best = 0, bd = 1e9;
+    for (let i = 0; i < pc; i++) {
+      const dr = palette[i * 3] - r, dg = palette[i * 3 + 1] - g, db = palette[i * 3 + 2] - b, d = dr * dr * 2 + dg * dg * 4 + db * db * 3;
+      if (d < bd) { bd = d; best = i; }
+    }
+    lut[k] = best;
+  }
+  return { palette: palette, lut: lut };
+}
+
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function toIndexed(d, w, h, lut) {       // 프레임의 모든 픽셀을 팔레트 번호로 (살짝 디더링해서 줄무늬를 줄여요)
+  const out = new Uint8Array(w * h);
+  for (let y = 0, p = 0, i = 0; y < h; y++) {
+    for (let x = 0; x < w; x++, p++, i += 4) {
+      const bias = (BAYER[(y & 3) * 4 + (x & 3)] - 7.5) * 0.3;
+      const r = clamp(d[i] + bias, 0, 255) >> 2, g = clamp(d[i + 1] + bias, 0, 255) >> 2, b = clamp(d[i + 2] + bias, 0, 255) >> 2;
+      out[p] = lut[r << 12 | g << 6 | b];
+    }
+  }
+  return out;
+}
+
+function lzwEncode(idx, minCode) {       // GIF 방식 압축 (LZW)
+  const clear = 1 << minCode, eoi = clear + 1;
+  let out = new Uint8Array(idx.length + 1024), pos = 0, buf = 0, cnt = 0;
+  let nbits = minCode + 1, maxcode = (1 << nbits) - 1, free = eoi + 1, dict = new Map();
+  function emit(code) {
+    buf |= code << cnt; cnt += nbits;
+    while (cnt >= 8) { if (pos >= out.length) { const n = new Uint8Array(out.length * 2); n.set(out); out = n; } out[pos++] = buf & 255; buf >>>= 8; cnt -= 8; }
+    if (free > maxcode && nbits < 12) { nbits++; maxcode = (1 << nbits) - 1; }
+  }
+  emit(clear);
+  let prefix = idx[0];
+  for (let i = 1; i < idx.length; i++) {
+    const k = idx[i], key = prefix * 256 + k, hit = dict.get(key);
+    if (hit !== undefined) { prefix = hit; continue; }
+    emit(prefix);
+    if (free < 4096) { dict.set(key, free++); }
+    else { emit(clear); dict = new Map(); free = eoi + 1; nbits = minCode + 1; maxcode = (1 << nbits) - 1; }
+    prefix = k;
+  }
+  emit(prefix); emit(eoi);
+  if (cnt > 0) { if (pos >= out.length) { const n = new Uint8Array(out.length + 4); n.set(out); out = n; } out[pos++] = buf & 255; }
+  return out.subarray(0, pos);
+}
+
+async function encodeGif(frames, w, h, delayCs, onProgress) {
+  const pal = buildPalette(frames);
+  const parts = [];
+  const hdr = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61, w & 255, w >> 8, h & 255, h >> 8, 0xF7, 0, 0];
+  parts.push(new Uint8Array(hdr), pal.palette);
+  parts.push(new Uint8Array([0x21, 0xFF, 0x0B, 0x4E, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32, 0x2E, 0x30, 0x03, 0x01, 0, 0, 0]));   // 무한 반복
+  for (let f = 0; f < frames.length; f++) {
+    parts.push(new Uint8Array([0x21, 0xF9, 0x04, 0x04, delayCs & 255, delayCs >> 8, 0, 0]));
+    parts.push(new Uint8Array([0x2C, 0, 0, 0, 0, w & 255, w >> 8, h & 255, h >> 8, 0, 8]));
+    const data = lzwEncode(toIndexed(frames[f], w, h, pal.lut), 8);
+    for (let p = 0; p < data.length; p += 255) {
+      const n = Math.min(255, data.length - p);
+      const blk = new Uint8Array(n + 1); blk[0] = n; blk.set(data.subarray(p, p + n), 1); parts.push(blk);
+    }
+    parts.push(new Uint8Array([0]));
+    onProgress(f + 1, frames.length);
+    if (f % 3 === 2) await new Promise(function (r) { setTimeout(r, 0); });
+  }
+  parts.push(new Uint8Array([0x3B]));
+  return new Blob(parts, { type: 'image/gif' });
+}
+
+// =====================================================================
+//  6) 화면 연결 (버튼, 입력칸, 애니메이션 돌리기)
+// =====================================================================
+const $ = id => document.getElementById(id);
+const stage = $('stage'), sctx = stage.getContext('2d');
+let images = [];
+let capPos = { x: 36, y: 98 };                // 문구 위치 (미리보기에서 끌어서 옮겨요)
+let bgImage = null;                           // 배경 사진 (따로 고른 것)
+let scene, started = false, startTime = 0;
+
+function settings() {
+  return { capColor: $('capColor').value, batColor: $('batColor').value, capX: capPos.x, capY: capPos.y, cloth: $('clothColor').value, hhColor: $('hhColor').value, starColor: $('starColor').value, bgImage: bgImage, bgZoom: +$('bgZoom').value / 100, bgOpacity: +$('bgOpacity').value / 100, ears: 'none', pumpkin: $('pumpColor').value, eyes: $('eyes').value, mouth: $('mouth').value, bg: $('bgColor').value, caption: $('caption').value.trim(), imgs: images, scene: scene };
+}
+function rebuildScene() {
+  CANDY_COLORS = family($('candyCol').value, [0, -22, 22, 45, -45]);       // 고른 색 + 비슷한 색들
+  SPARK_COLORS = family($('sparkCol').value, [0, 18, -18, 32]);
+  scene = makeScene({ bats: 6, candies: 12, sparks: 84 });
+}
+function family(hex, shifts) {                // 색 하나 → 색상(hue)을 조금씩 옮기고 밝기를 바꾼 "같은 계열" 색들
+  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  let h = 0, sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (d) { if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4; h *= 60; }
+  return shifts.map(function (sh, i) {
+    const hh = ((h + sh) % 360 + 360) % 360, ss = clamp(sat, 0.35, 1), ll = clamp(l + (i % 2 ? 0.08 : -0.04) * (i ? 1 : 0), 0.35, 0.72);
+    const f = n => { const k = (n + hh / 30) % 12, a = ss * Math.min(ll, 1 - ll); return Math.round(255 * (ll - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+    return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('');
+  });
+}
+['candyCol', 'sparkCol'].forEach(id => $(id).addEventListener('input', rebuildScene));
+rebuildScene();
+
+function play() { started = true; startTime = performance.now() - 0; }       // 클릭 → 바로 흔들기 시작
+let capDrag = null, noClick = false;
+function stagePos(e) { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+function onCaption(p) { const m = 8; return p.x >= CAPBOX.x - m && p.x <= CAPBOX.x + CAPBOX.w + m && p.y >= CAPBOX.y - m && p.y <= CAPBOX.y + CAPBOX.h + m; }
+stage.style.touchAction = 'none';
+stage.addEventListener('pointerdown', function (e) {                  // 문구를 누르면 끌어서 옮길 수 있어요
+  const p = stagePos(e); if (!onCaption(p)) return;
+  capDrag = { dx: p.x - capPos.x, dy: p.y - capPos.y, moved: false }; stage.setPointerCapture(e.pointerId); e.preventDefault();
+});
+stage.addEventListener('pointermove', function (e) {
+  const p = stagePos(e);
+  if (capDrag) { capDrag.moved = true; capPos.x = clamp(p.x - capDrag.dx, -10, W - 40); capPos.y = clamp(p.y - capDrag.dy, 20, H - 6); stage.style.cursor = 'grabbing'; }
+  else stage.style.cursor = onCaption(p) ? 'grab' : 'pointer';
+});
+stage.addEventListener('pointerup', function () { if (capDrag && capDrag.moved) noClick = true; capDrag = null; setTimeout(function () { noClick = false; }, 0); });
+stage.addEventListener('click', function () { if (!noClick) play(); });
+$('playBtn').onclick = play;
+$('resetBtn').onclick = function () { started = false; };
+
+function loop(now) {
+  const idleT = now / 1000;
+  const t = started ? IDLE + (now - startTime) / 1000 : 0;
+  const o = settings(); o.scale = stage.width / W; o.hint = !started; o.idleT = idleT;
+  try { render(sctx, t, o); }
+  catch (err) {                                    // 어떤 사진 때문에 그리기가 실패해도 멈추지 않고 사진 없이 계속해요
+    console.error(err); images = [];
+    $('imgMsg').style.color = '#d9730d'; $('imgMsg').textContent = '❌ 이 사진으로는 장면을 그리지 못해 사진을 빼고 계속해요 (' + (err && err.message) + ')';
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// 사진 고르기: 너무 큰 사진은 미리 줄여서 쓰면 빨라요
+// 불러온 그림을 정리: 투명한 부분이 있으면 투명 여백을 잘라내고 "투명 있음" 표시를 해요
+function finishImage(cv) {
+  const w = cv.width, h = cv.height;
+  let d;
+  try { d = cv.getContext('2d').getImageData(0, 0, w, h).data; } catch (e) { return { canvas: cv, width: w, height: h, hasAlpha: false }; }
+  let minX = w, minY = h, maxX = -1, maxY = -1, transparent = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const a = d[(y * w + x) * 4 + 3];
+    if (a < 250) transparent++;
+    if (a > 12) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  }
+  if (transparent < w * h * 0.02 || maxX < 0) return { canvas: cv, width: w, height: h, hasAlpha: false };   // 거의 불투명이면 보통 사진
+  const nw = maxX - minX + 1, nh = maxY - minY + 1;
+  const out = document.createElement('canvas'); out.width = nw; out.height = nh;
+  out.getContext('2d').drawImage(cv, minX, minY, nw, nh, 0, 0, nw, nh);
+  return { canvas: out, width: nw, height: nh, hasAlpha: true };
+}
+
+// 파일을 그림으로 읽기: 방법 1) 이미지 태그 → 2) 파일 읽어서 data 주소로 → 3) createImageBitmap (큰 사진도 줄여서)
+// 한 방법이 실패해도 다음 방법을 시도해서, PNG/JPG/WebP 등 대부분 열려요.
+function loadViaImg(src) {
+  return new Promise(function (resolve, reject) {
+    const im = new Image();
+    im.onload = function () { resolve({ src: im, w: im.naturalWidth || 400, h: im.naturalHeight || 400 }); };
+    im.onerror = function () { reject(new Error('이미지 태그로 열 수 없어요')); };
+    im.src = src;
+  });
+}
+function readAsDataUrl(file) {
+  return new Promise(function (resolve, reject) {
+    const fr = new FileReader(); fr.onload = function () { resolve(fr.result); }; fr.onerror = function () { reject(new Error('파일을 읽지 못했어요')); }; fr.readAsDataURL(file);
+  });
+}
+async function loadFile(file) {
+  let lastErr = null;
+  try { const url = URL.createObjectURL(file); try { return await loadViaImg(url); } finally { URL.revokeObjectURL(url); } } catch (e) { lastErr = e; }
+  try { return await loadViaImg(await readAsDataUrl(file)); } catch (e) { lastErr = e; }
+  if (window.createImageBitmap) {
+    try { const bmp = await createImageBitmap(file, { resizeWidth: 800, resizeQuality: 'medium' }); return { src: bmp, w: bmp.width, h: bmp.height }; } catch (e) { lastErr = e; }
+    try { const bmp = await createImageBitmap(file); return { src: bmp, w: bmp.width, h: bmp.height }; } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('알 수 없는 오류');
+}
+
+function updateBgLabels() { $('bgZoomVal').textContent = $('bgZoom').value + '%'; $('bgOpVal').textContent = $('bgOpacity').value + '%'; }
+['bgZoom', 'bgOpacity'].forEach(id => $(id).addEventListener('input', updateBgLabels)); updateBgLabels();
+$('bgFile').onchange = async function (e) {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  const msg = $('bgMsg'); msg.style.color = '#d9730d'; msg.textContent = '';
+  try {
+    const got = await loadFile(file), k = Math.min(1, 1200 / Math.max(got.w, got.h)) || 1;
+    const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(got.w * k)); cv.height = Math.max(1, Math.round(got.h * k));
+    cv.getContext('2d').drawImage(got.src, 0, 0, cv.width, cv.height);
+    bgImage = { canvas: cv, width: cv.width, height: cv.height };
+    msg.style.color = '#16995a'; msg.textContent = '✅ 배경 사진을 불러왔어요'; $('bgClear').style.display = 'inline-block'; play();
+  } catch (err) { console.error(err); msg.textContent = '❌ 열 수 없어요(' + (file.type || '형식 모름') + ')'; }
+};
+$('bgClear').onclick = function () { bgImage = null; $('bgMsg').textContent = ''; $('bgClear').style.display = 'none'; };
+
+$('imgFile').onchange = async function (e) {
+  const files = Array.from(e.target.files).slice(0, 4); e.target.value = '';
+  const msg = $('imgMsg'); msg.textContent = ''; msg.style.color = '#d9730d';
+  if (!files.length) return;
+  const loaded = [], problems = [];
+  for (const file of files) {
+    const isHeic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+    if (file.size > 40 * 1048576) { problems.push(file.name + ': 너무 커요(40MB 이하)'); continue; }
+    try {
+      const got = await loadFile(file);
+      const k = Math.min(1, 1000 / Math.max(got.w, got.h)) || 1;
+      const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(got.w * k)); cv.height = Math.max(1, Math.round(got.h * k));
+      cv.getContext('2d').drawImage(got.src, 0, 0, cv.width, cv.height);
+      loaded.push(finishImage(cv));
+    } catch (err) {
+      console.error(err);
+      problems.push(file.name + (isHeic ? ': 아이폰 HEIC는 열 수 없어요(JPG로 바꿔 주세요)' : ': 열 수 없어요(' + (file.type || '형식 모름') + ')'));
+    }
+  }
+  if (loaded.length) {
+    images = loaded;
+    msg.style.color = '#16995a';
+    msg.textContent = '✅ 사진 ' + loaded.length + '장을 불러왔어요' + (loaded.some(im => im.hasAlpha) ? ' (투명 PNG는 액자 없이 모양 그대로)' : '') + (files.length > 4 ? ' · 최대 4장까지만 써요' : '');
+    if (problems.length) { msg.style.color = '#d9730d'; msg.textContent += ' / ❌ ' + problems.join(' / '); }
+    play();
+  } else {
+    msg.textContent = '❌ ' + problems.join(' / ');
+  }
+};
+
+// GIF 만들기
+$('gifBtn').onclick = async function () {
+  const btn = $('gifBtn'); btn.disabled = true;
+  $('result').style.display = 'none'; $('bar').style.display = 'block';
+  const size = +$('gifSize').value, delayCs = +$('gifFps').value, fps = 100 / delayCs;
+  const total = Math.round(DURATION * fps);
+  const cv = document.createElement('canvas'); cv.width = cv.height = size;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  const frames = [], o = settings(); o.scale = size / W; o.hint = false;
+  try {
+    for (let i = 0; i < total; i++) {                                    // 1단계: 장면을 한 장씩 그려 모아요
+      o.idleT = i / fps; render(cx, i / fps, o);
+      frames.push(new Uint8ClampedArray(cx.getImageData(0, 0, size, size).data));
+      $('barFill').style.width = (i / total * 50) + '%'; $('status').textContent = '장면 그리는 중... ' + (i + 1) + '/' + total;
+      if (i % 4 === 3) await new Promise(r => setTimeout(r, 0));
+    }
+    const blob = await encodeGif(frames, size, size, delayCs, function (n, m) {   // 2단계: GIF로 압축해요
+      $('barFill').style.width = (50 + n / m * 50) + '%'; $('status').textContent = 'GIF로 만드는 중... ' + n + '/' + m;
+    });
+    const url = URL.createObjectURL(blob);
+    $('resultImg').src = url; $('download').href = url;
+    $('sizeInfo').textContent = size + '×' + size + ' · ' + total + '장 · ' + (blob.size / 1048576).toFixed(1) + 'MB';
+    $('result').style.display = 'block'; $('status').textContent = '✅ 완성! 이미지를 꾹 눌러 저장하거나 아래 버튼을 누르세요.';
+  } catch (err) {
+    console.error(err); $('status').textContent = '❌ GIF를 만들지 못했어요. 크기를 "작게"로 바꿔서 다시 해 보세요.';
+  }
+  $('bar').style.display = 'none'; btn.disabled = false;
+};
+</script>
+</body>
+</html>
