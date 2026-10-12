@@ -56,14 +56,14 @@
     <div>
       <div class="panel">
         <h2>1. 꾸미기</h2>
-        <label>튀어나올 사진 — 최대 4장, 여러 장을 한꺼번에 골라도 돼요</label>
+        <label>튀어나올 사진 — 최대 4장</label>
         <input type="file" id="imgFile" accept="image/*" multiple>
         <p class="small" id="imgMsg" style="color:#d9730d;margin:6px 0 0"></p>
         <label>문구</label>
         <input type="text" id="caption" value="" placeholder="" maxlength="24">
         <label>문구 색</label>
         <input type="color" id="capColor" value="#1b0f2a" class="bigcolor">
-        <label>테이블보 색 (접시 밑 체크무늬)</label>
+        <label>테이블보 색</label>
         <input type="color" id="clothColor" value="#e8576b" class="bigcolor">
         <label>Happy Halloween! 글자 색</label>
         <input type="color" id="hhColor" value="#ff7a12" class="bigcolor">
@@ -986,7 +986,7 @@ $('imgFile').onchange = async function (e) {
   if (loaded.length) {
     images = loaded;
     msg.style.color = '#16995a';
-    msg.textContent = '✅ 사진 ' + loaded.length + '장을 불러왔어요' + (loaded.some(im => im.hasAlpha) ? ' (투명 PNG는 액자 없이 모양 그대로)' : '') + (files.length > 4 ? ' · 최대 4장까지만 써요' : '');
+    msg.textContent = '✅ 사진 ' + loaded.length + '장을 불러왔어요' + (files.length > 4 ? ' · 최대 4장까지만 써요' : '');
     if (problems.length) { msg.style.color = '#d9730d'; msg.textContent += ' / ❌ ' + problems.join(' / '); }
     play();
   } else {
